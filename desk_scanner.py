@@ -40,11 +40,15 @@ import requests
 from datetime import datetime, timezone
 
 # ------------------- AYARLAR (kendine göre değiştir) -------------------
-POLL_INTERVAL_SEC = 45          # kaç saniyede bir tarasın
-MAX_AGE_MINUTES = 10            # "yeni" kabul edilecek maksimum yaş
-MIN_MARKET_CAP_USD = 25000       # minimum market cap filtresi (çok düşükse muhtemelen ölü)
-MIN_REPLIES = 5                 # pump.fun yorum sayısı - kaba bir ilgi göstergesi, 0 = filtre yok
-MAX_TOP10_HOLDER_PCT = 40       # top10 holder bu yüzdenin üstündeyse VETO (rugcheck varsa)
+# Bildirim SAYISINI azaltmak istersen bu üç değeri yükselt:
+#   MIN_MARKET_CAP_USD'yi artır (örn. 15000-20000) -> sadece gerçekten ilgi görenler geçer
+#   MIN_REPLIES'i artır (örn. 3-5) -> sadece yorum alan / gerçek ilgi görenler geçer
+#   MAX_AGE_MINUTES'i düşür (örn. 5) -> sadece daha taze olanlar geçer
+POLL_INTERVAL_SEC = 60           # kaç saniyede bir tarasın
+MAX_AGE_MINUTES = 5              # "yeni" kabul edilecek maksimum yaş
+MIN_MARKET_CAP_USD = 15000       # minimum market cap filtresi (çok düşükse muhtemelen ölü)
+MIN_REPLIES = 3                  # pump.fun yorum sayısı - kaba bir ilgi göstergesi
+MAX_TOP10_HOLDER_PCT = 40        # top10 holder bu yüzdenin üstündeyse VETO (rugcheck varsa)
 SEEN_FILE = "desk_seen_tokens.txt"   # aynı token'ı tekrar tekrar bildirmemek için
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -145,10 +149,15 @@ def evaluate_candidate(coin):
         top10pct = rc.get("topHoldersPercent", "doğrulanamadı")
         if isinstance(top10pct, (int, float)) and top10pct > MAX_TOP10_HOLDER_PCT:
             veto_reasons.append(f"top10 holder %{top10pct} > limit")
-        if mint_auth not in ("doğrulanamadı", None, "null", "revoked", False):
+        if mint_auth not in (None, "null", "revoked", False):
             veto_reasons.append("mint authority hâlâ aktif olabilir")
     else:
         veto_reasons.append("rugcheck verisi alınamadı -> otomatik VETO")
+
+    # KURAL: doğrulanamayan HER güvenlik alanı otomatik VETO demektir.
+    # "doğrulanamadı" asla sessizce geçip İZLE'ye çevrilmemeli (DESK kuralı: şüphede VETO).
+    if mint_auth == "doğrulanamadı" or freeze_auth == "doğrulanamadı" or top10pct == "doğrulanamadı":
+        veto_reasons.append("mint/freeze/holder verisi doğrulanamadı -> otomatik VETO")
 
     decision = "GEÇ" if veto_reasons else "İZLE (manuel doğrulama şart)"
 
@@ -219,7 +228,10 @@ def run_once(seen):
         msg = format_message(c)
         print(msg)
         print("-" * 50)
-        send_telegram(msg)
+        # Sadece GEÇ olmayanları (yani en azından "İZLE" diyebildiklerini) Telegram'a gönder.
+        # GEÇ'ler yine terminal/log'da görünür (kayıt için), ama telefonunu spam etmez.
+        if c["decision"] != "GEÇ":
+            send_telegram(msg)
 
     if not new_candidates:
         print(f"[{datetime.now().strftime('%H:%M:%S')}] Yeni aday yok. (Toplam çekilen coin: {len(coins)})")
