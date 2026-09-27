@@ -42,8 +42,8 @@ from datetime import datetime, timezone
 # ------------------- AYARLAR (kendine göre değiştir) -------------------
 POLL_INTERVAL_SEC = 45          # kaç saniyede bir tarasın
 MAX_AGE_MINUTES = 10            # "yeni" kabul edilecek maksimum yaş
-MIN_MARKET_CAP_USD = 3000       # minimum market cap filtresi (çok düşükse muhtemelen ölü)
-MIN_REPLIES = 0                 # pump.fun yorum sayısı - kaba bir ilgi göstergesi, 0 = filtre yok
+MIN_MARKET_CAP_USD = 25000       # minimum market cap filtresi (çok düşükse muhtemelen ölü)
+MIN_REPLIES = 5                 # pump.fun yorum sayısı - kaba bir ilgi göstergesi, 0 = filtre yok
 MAX_TOP10_HOLDER_PCT = 40       # top10 holder bu yüzdenin üstündeyse VETO (rugcheck varsa)
 SEEN_FILE = "desk_seen_tokens.txt"   # aynı token'ı tekrar tekrar bildirmemek için
 
