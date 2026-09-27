@@ -51,7 +51,10 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 # pump.fun'ın herkese açık (resmi olmayan ama public) coin listesi API'si
-PUMPFUN_COINS_URL = "https://frontend-api.pump.fun/coins"
+# NOT: frontend-api.pump.fun Haziran 2026'da kapatıldı (DNS hatası / Cloudflare 530).
+# Güncel adres frontend-api-v3.pump.fun. pump.fun bunu yine değiştirebilir;
+# ileride tekrar 5xx/530 alırsan önce bu domain'in hâlâ geçerli olup olmadığını kontrol et.
+PUMPFUN_COINS_URL = "https://frontend-api-v3.pump.fun/coins"
 RUGCHECK_URL = "https://api.rugcheck.xyz/v1/tokens/{mint}/report/summary"
 
 HEADERS = {
